@@ -14,6 +14,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+
 class ClaimForm
 {
     public static function configure(Schema $schema): Schema
@@ -48,7 +51,6 @@ class ClaimForm
                                     ->openable()
                                     ->downloadable()
                                     ->live()
-                                    // ✅ FIX: Removed strict type-hint ($state) to accept string or uploaded file
                                     ->afterStateUpdated(function ($state, callable $set) {
                                         if (! $state) return;
 
@@ -96,33 +98,62 @@ class ClaimForm
                     ])->columns(2),
 
                 Section::make(__('Reviewer Options'))
-                    ->visible(function () {
-                        $user = auth()->user();
-
-                        return $user && ($user->isDoctor());
-                    })
+                    ->visible(fn () => auth()->user()?->isDoctor())
                     ->schema([
-                        Select::make('status')
-                            ->label(__('Status'))
-                            ->options([
-                                // 'pend' => 'Pending',
-                                'appr' => 'Approved',
-                                'part' => 'Partially Approved',
-                                'rej'  => 'Rejected',
-                            ])
-                            ->required(),
+                Select::make('status')
+                    ->label(__('Status'))
+            ->options([
+                'appr' => __('Approved'),
+                'part' => __('Partially Approved'),
+                'rej'  => __('Rejected'),
+            ])
+            ->required()
+            ->live() // Make status reactive to update other fields in real-time
+            ->afterStateUpdated(function ($state, $set, $get) {
+    $claimedAmount = (float) ($get('claimed_amount') ?? 0);
 
-                        TextInput::make('approved_amount')
-                            ->label(__('Approved Amount'))
-                            ->numeric()
-                            ->prefix('LYD')
-                            ->required(fn (callable $get) => in_array($get('status'), ['appr', 'part'])),
-
-                        Textarea::make('reviewer_notes')
-                            ->label(__('Reviewer Notes'))
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])->columns(2),
-            ]);
+    if ($state === 'appr') {
+        $set('approved_amount', $claimedAmount);
+    } elseif ($state === 'rej') {
+        $set('approved_amount', 0);
+    } elseif ($state === 'part') {
+        $set('approved_amount', null);
     }
+}),
+
+        TextInput::make('approved_amount')
+            ->label(__('Approved Amount'))
+            ->numeric()
+            ->prefix('LYD')
+            ->required(fn ($get) => in_array($get('status'), ['appr', 'part']))
+            ->disabled(fn ($get) => in_array($get('status'), ['rej']))
+            ->dehydrated() // CRITICAL: Force saving value when disabled
+            ->rules([
+                fn ($get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+                    if ($get('status') === 'part') {
+                        $claimedAmount = (float) ($get('claimed_amount') ?? 0);
+                        $approvedAmount = (float) $value;
+
+                        if ($approvedAmount <= 0) {
+                            $fail(__('Approved amount must be greater than 0 for partial approval.'));
+                        }
+
+                        if ($approvedAmount >= $claimedAmount) {
+                            $fail(__('Approved amount must be strictly less than the claimed amount (:amount LYD).', [
+                                'amount' => $claimedAmount,
+                            ]));
+                        }
+                    }
+                },
+            ]),
+
+        Textarea::make('reviewer_notes')
+            ->label(__('Reviewer Notes'))
+            ->required(fn ($get) => in_array($get('status'), ['part', 'rej']))
+            ->maxLength(255)
+            ->columnSpanFull(),
+    ])
+    ->columns(2),
+    ]);
+ }
 }

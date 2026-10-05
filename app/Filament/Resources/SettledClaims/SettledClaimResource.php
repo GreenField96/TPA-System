@@ -9,7 +9,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Filters\SelectFilter;
-
+use Filament\Tables\Columns\Summarizers\Sum;
 
 class SettledClaimResource extends Resource
 {
@@ -28,7 +28,9 @@ class SettledClaimResource extends Resource
         if (auth()->user()?->isProvider()) {
             return $query->where('provider_id', auth()->id());
         }
-
+        if (auth()->user()?->isDoctor()) {
+        return $query->where('reviewer_id', auth()->id()); // Filter claims reviewed by this doctor
+        }
         return $query;
     }
 
@@ -50,7 +52,12 @@ class SettledClaimResource extends Resource
 
                 TextColumn::make('approved_amount')
                     ->label(__('Approved'))
-                    ->money('LYD'),
+                    ->money('LYD')
+                    ->summarize(
+                        Sum::make()
+                            ->label(__('Total Approved'))
+                            ->money('LYD')
+                    ),
 
                 TextColumn::make('status')
                     ->sortable()

@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Policies\MemberPolicy;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Member;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (request()->hasHeader('X-Forwarded-Proto') && request()->header('X-Forwarded-Proto') === 'https') {
+            URL::forceScheme('https');
+        }
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Member::class, MemberPolicy::class);
     }

@@ -26,7 +26,7 @@ class EditClaim extends EditRecord
     {
         $user = auth()->user();
 
-        if ($user?->isAdmin() || $user?->isDoctor()) {
+        if ($user?->isDoctor()) {
             $data['reviewer_id'] = $user->id;
             $data['locked_at'] = now();
 
