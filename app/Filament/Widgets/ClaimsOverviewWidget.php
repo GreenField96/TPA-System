@@ -19,7 +19,10 @@ class ClaimsOverviewWidget extends BaseWidget
             $query->where('provider_id', $user->id); 
             // Note: Update 'provider_id' if your foreign key column has a different name
         }
-
+        if ($user?->isDoctor()) {
+            $query->where('reviewer_id', $user->id); 
+            // Note: Update 'provider_id' if your foreign key column has a different name
+        }
         // Calculate counts
         $totalSent = (clone $query)->count();
         $approved  = (clone $query)->where('status', 'appr')->count();
