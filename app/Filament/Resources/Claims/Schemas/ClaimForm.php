@@ -126,7 +126,7 @@ class ClaimForm
             ->numeric()
             ->prefix('LYD')
             ->required(fn ($get) => in_array($get('status'), ['appr', 'part']))
-            ->disabled(fn ($get) => in_array($get('status'), ['rej']))
+            ->disabled(fn ($get) => in_array($get('status'), ['appr','rej']))
             ->dehydrated() // CRITICAL: Force saving value when disabled
             ->rules([
                 fn ($get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
