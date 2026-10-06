@@ -11,14 +11,14 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 
 class CompanyResource extends Resource
 {
     protected static ?string $model = Company::class;
 
-    // protected static ?string $navigationIcon = 'heroicon-o-building-office';
-    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office';
 
 
     // protected static \UnitEnum|string|null $navigationGroup = 'Administration';
@@ -30,9 +30,9 @@ class CompanyResource extends Resource
     /**
      * Restrict access so only Admins can view or manage this resource.
      */
-   public static function canViewAny(): bool
+    public static function canAccess(): bool
     {
-        return true;
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     public static function form(Schema $schema): Schema

@@ -22,7 +22,8 @@ class MemberResource extends Resource
     protected static ?string $model = Member::class;
 
 // Use BackedEnum|string|null to match Filament\Resources\Resource
-    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
+    // protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-identification';
 
     // Use UnitEnum|string|null to match Filament\Resources\Resource
     protected static \UnitEnum|string|null $navigationGroup = 'Management';
